@@ -6,19 +6,24 @@ app.use(express.static(__dirname + '/public'));
 //ejs 템플릿 연결
 app.set('view engine', 'ejs');
 app.use(express.json());
-app.use(express.urlencoded({extended : true}));
+app.use(express.urlencoded({
+  extended: true
+}));
 
-const { MongoClient, ObjectId } = require('mongodb');
+const {
+  MongoClient,
+  ObjectId
+} = require('mongodb');
 
 let db;
 const url = 'mongodb+srv://parkyangji:rhdandnjs02@cluster0.2n908hd.mongodb.net/?retryWrites=true&w=majority';
 new MongoClient(url).connect().then((client) => {
   console.log('DB연결성공');
   db = client.db('board');
-  app.listen(8080, ()=>{
+  app.listen(8080, () => {
     console.log('8080에서 서버 실행중')
   });
-}).catch((err)=>{
+}).catch((err) => {
   console.log(err);
 })
 
@@ -31,7 +36,9 @@ app.get('/list', async (req, res) => {
   //db.collection('post').insertOne({title: '어쩌구'})
   let result = await db.collection('post').find().toArray(); // db 내용을 가져오기
   //console.log(result) 
-  res.render('list.ejs', { 글목록 : result }) //응답은 1개만
+  res.render('list.ejs', {
+    글목록: result
+  }) //응답은 1개만
 });
 
 app.get('/write', (req, res) => {
@@ -40,22 +47,59 @@ app.get('/write', (req, res) => {
 
 app.post('/add', async (req, res) => {
   //console.log(req.body) //form에서 전송한 것
-  
+
   try {
     if (req.body.title === '') {
       res.send('제목입력안했는데?')
     } else {
-      await db.collection('post').insertOne({title: req.body.title, content: req.body.content});
+      await db.collection('post').insertOne({
+        title: req.body.title,
+        content: req.body.content
+      });
       res.redirect('/list'); // 유저를 다른 페이지로 이동시킴
     }
-  } catch(e){
+  } catch (e) {
     //console.log(e)
     res.status(500).send('서버에러남') // 에러시 에러코드 전송해주면 좋음
   }
 });
 
-app.get('/detail/:aaa', async (req, res)=>{
+app.get('/detail/:id', async (req, res) => {
 
-  let result = await db.collection('post').findOne({ _id : new ObjectId(req.params.aaa)})
-  res.render('detail.ejs', {정보 : result});
+  try {
+    let result = await db.collection('post').findOne({
+      _id: new ObjectId(req.params.id)
+    })
+    if (result === null) res.status(400).send('null');
+    res.render('detail.ejs', {
+      정보: result
+    });
+  } catch (e) {
+    //console.log(e)
+    res.status(400).send('이상한 url 입력함');
+  }
+});
+
+app.get('/edit/:id', async (req, res) => {
+  let result = await db.collection('post').findOne({
+    _id: new ObjectId(req.params.id)
+  })
+  res.render('edit.ejs', {
+    정보: result
+  });
+});
+
+app.post('/edit', async (req, res) => {
+  await db.collection('post').updateOne({
+    _id: new ObjectId(req.body.id)
+  }, {
+    $set: {
+      title: req.body.title,
+      content: req.body.content
+    }
+  })
+  let result = await db.collection('post').find().toArray(); // db 내용을 가져오기
+  res.render('list.ejs', {
+    글목록: result
+  })
 });

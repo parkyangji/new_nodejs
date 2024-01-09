@@ -11,15 +11,13 @@
 
   <%- include('nav.ejs') %>
 
-  <span><%= new Date() %></span>
-  <div class="white-bg">
-    <% for (let i = 0; i < 글목록.length; i++){ %>
-    <div class="list-box">
-      <a href="/detail/<%= 글목록[i]._id %>"><%= 글목록[i].title %><a href="/edit/<%= 글목록[i]._id %>">✏️</a></a>
-      <p><%= 글목록[i].content %></p>
-    </div>
-    <% } %>
-  </div> 
+  <form class="form-box" action="/edit" method="POST">
+    <h4>수정페이지</h4>
+    <input style="display: none;" name="id" value="<%= 정보._id %>">
+    <input name="title" value="<%= 정보.title %>">
+    <input name="content" value="<%= 정보.content %>">
+    <button type="submit">수정</button>
+  </form>
 
 </body>
 </html>
