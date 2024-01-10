@@ -12,7 +12,17 @@ app.use(express.urlencoded({ extended: true }));
 // 폼 태그에서 put, delete 요청 등 맘대로
 app.use(methodeOverride('_method'));
 
+const session = require('express-session');
+const passport = require('passport');
+const LocalStratege = require('passport-local');
 
+app.use(passport.initialize());
+app.use(session({
+  secret : '비번', // 세션 id는 암호화해서 유저에게 보냄
+  resave : false,  // 유저가 서버로 요청할 때마다 세션 갱신할건지
+  saveUninitialized : false // 로그인 안해도 세션 만들것인지
+}));
+app.use(passport.session());
 
 let db;
 const url = 'mongodb+srv://parkyangji:rhdandnjs02@cluster0.2n908hd.mongodb.net/?retryWrites=true&w=majority';
@@ -28,7 +38,8 @@ new MongoClient(url).connect().then((client) => {
 
 app.get('/', (req, res) => {
   //res.send('반갑다');
-  res.sendFile(__dirname + '/index.html');
+  //res.sendFile(__dirname + '/index.html');
+  res.render('index.ejs');
 });
 
 app.get('/list', async (req, res) => {
@@ -100,4 +111,8 @@ app.delete('/delete', async (req, res)=>{
 
   await db.collection('post').deleteOne({_id : new ObjectId(req.query.id)});
   res.send('삭제완료'); // ajax 요청 사용시 .redirect, .render 안쓰는게 좋음
+});
+
+app.get('/login', (req, res) => {
+  res.render('login.ejs');
 });
