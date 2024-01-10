@@ -35,9 +35,7 @@ app.get('/list', async (req, res) => {
   //db.collection('post').insertOne({title: '어쩌구'})
   let result = await db.collection('post').find().toArray(); // db 내용을 가져오기
   //console.log(result) 
-  res.render('list.ejs', {
-    글목록: result
-  }) //응답은 1개만
+  res.render('list.ejs', { 글목록: result }) //응답은 1개만
 });
 
 app.get('/write', (req, res) => {
@@ -95,4 +93,11 @@ app.put('/edit', async (req, res) => {
 
   let result = await db.collection('post').find().toArray(); // db 내용을 가져오기
   res.render('list.ejs', { 글목록: result });
+});
+
+app.delete('/delete', async (req, res)=>{
+  //console.log(req.query)
+
+  await db.collection('post').deleteOne({_id : new ObjectId(req.query.id)});
+  res.send('삭제완료'); // ajax 요청 사용시 .redirect, .render 안쓰는게 좋음
 });

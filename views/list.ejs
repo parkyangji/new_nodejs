@@ -15,11 +15,54 @@
   <div class="white-bg">
     <% for (let i = 0; i < 글목록.length; i++){ %>
     <div class="list-box">
-      <a href="/detail/<%= 글목록[i]._id %>"><%= 글목록[i].title %><a href="/edit/<%= 글목록[i]._id %>">✏️</a></a>
+      <a href="/detail/<%= 글목록[i]._id %>"><%= 글목록[i].title %>
+        <a href="/edit/<%= 글목록[i]._id %>">✏️</a>      
+        <span data-id="<%= 글목록[i]._id %>" class="delete">🗑️</span>
+      </a>
       <p><%= 글목록[i].content %></p>
     </div>
     <% } %>
   </div> 
+  
 
+<script>
+  document.querySelectorAll('.delete').forEach((item, i)=>{
+    item.addEventListener('click', function(e){
+      e.preventDefault();
+
+      // 서버로 데이터 전송 1. ajax (axios 라이브러리) 2. query string 3. url
+      // fetch('/abc?데이터이름=데이터값&데이터이름=데이터값') => query string  ...consolog.log(req.query.데이터이름)
+      // fetch('/abc/parkyangji') => url
+      // url로 정보유출
+      fetch('/delete?id=' + e.target.dataset.id, {
+        method : 'DELETE'
+      })
+      .then((r)=>r.text())
+      .then((r)=>{console.log(r) // 삭제완료
+          // html을 보여주는 법 
+          // 1. 서버에서 다 만들어서 보내기(서버사이드랜더링) 
+          // 2. 서버는 데이터만 보내고 브라우저에서 완성하기 (클라이언트사이드렌더링)
+          item.parentElement.style.display = 'none';
+      }) 
+    })
+  })
+
+  /*
+  fetch('/URL')
+    .then((r)=>{
+      if (r.status == 200) {
+        return r.json()
+      } else {
+        // 서버가 에러코드 전송시 실행할 코드
+      }
+    })
+    .then((result)=>{
+      // 성공시 실행할 코드
+    }).catch((err)=>{
+      // 인터넷 문제 등으로 실패시 실행할 코드
+      console.log(err)
+    })
+  */
+</script>
 </body>
 </html>
