@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const { MongoClient, ObjectId } = require('mongodb');
 const methodeOverride = require('method-override');
+const bcrypt = require('bcrypt');
 
 // 폴더안에 파일들을 html에서 사용가능
 app.use(express.static(__dirname + '/public'));
@@ -123,7 +124,7 @@ passport.use(new LocalStratege(async (id, pa, cb) => {
     return cb(null, false, { message : '아이디 DB에 없음' })
   }
 
-  if (result.password === pa) {
+  if (await bcrypt.compare(pa, result.password)) { //result.password === pa
     return cb(null, result)
   } else {
     return cb(null, false, { message : '비번불일치' })
@@ -160,4 +161,22 @@ app.post('/login', async (req, res, next) => {
       res.redirect('/');
     })
   })(req, res, next) 
-})
+});
+
+app.get('/register', (req, res)=>{
+  res.render('register.ejs')
+});
+
+app.post('/register', async (req, res)=>{
+  let hashing = await bcrypt.hash(req.body.password, 10);
+
+  await db.collection('user').insertOne({
+    username: req.body.username,
+    password: hashing // 해싱
+  });
+  // username 빈칸?
+  // 이미 있는 유저?
+  // password 짧으면?
+
+  res.redirect('/');
+});
