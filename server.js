@@ -3,6 +3,7 @@ const app = express();
 const { MongoClient, ObjectId } = require('mongodb');
 const methodeOverride = require('method-override');
 const bcrypt = require('bcrypt');
+const MongoStore = require('connect-mongo');
 
 // 폴더안에 파일들을 html에서 사용가능
 app.use(express.static(__dirname + '/public'));
@@ -22,7 +23,11 @@ app.use(session({
   secret : '비번', // 세션 id는 암호화해서 유저에게 보냄
   resave : false,  // 유저가 서버로 요청할 때마다 세션 갱신할건지
   saveUninitialized : false, // 로그인 안해도 세션 만들것인지
-  cookie : { maxAge : 60 * 1000 * 60 } // 6000(1분) 1시간
+  cookie : { maxAge : 60 * 1000 * 60 }, // 6000(1분) 1시간
+  store : MongoStore.create({
+    mongoUrl : 'mongodb+srv://parkyangji:rhdandnjs02@cluster0.2n908hd.mongodb.net/?retryWrites=true&w=majority',// DB접속 URL
+    dbName : 'board' //DB이름
+  })
 }));
 app.use(passport.session());
 
@@ -136,6 +141,7 @@ passport.serializeUser((user, done) => { //req.logIn() 쓰면 자동 실행됨.
     done(null, { id : user._id, username : user.username }) // 쿠키도 보내줌
   })
 });
+// 특정 api에서만 deserializeUser 방법 찾기 // 요청이 많아 db 부담 => redis // or JWT
 passport.deserializeUser(async (user, done) => {  // 유저가 보낸 쿠키 분석
   let result = await db.collection('user').findOne({_id : new ObjectId(user.id)});
   delete result.password
