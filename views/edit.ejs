@@ -11,7 +11,7 @@
 
   <%- include('nav.ejs') %>
 
-  <form class="form-box" action="/edit" method="POST">
+  <form class="form-box" action="/edit?_method=PUT" method="POST">
     <h4>수정페이지</h4>
     <input style="display: none;" name="id" value="<%= 정보._id %>">
     <input name="title" value="<%= 정보.title %>">
