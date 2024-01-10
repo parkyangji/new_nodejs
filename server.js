@@ -20,7 +20,8 @@ app.use(passport.initialize());
 app.use(session({
   secret : '비번', // 세션 id는 암호화해서 유저에게 보냄
   resave : false,  // 유저가 서버로 요청할 때마다 세션 갱신할건지
-  saveUninitialized : false // 로그인 안해도 세션 만들것인지
+  saveUninitialized : false, // 로그인 안해도 세션 만들것인지
+  cookie : { maxAge : 60 * 1000 * 60 } // 6000(1분) 1시간
 }));
 app.use(passport.session());
 
@@ -113,6 +114,50 @@ app.delete('/delete', async (req, res)=>{
   res.send('삭제완료'); // ajax 요청 사용시 .redirect, .render 안쓰는게 좋음
 });
 
+
+
+passport.use(new LocalStratege(async (id, pa, cb) => {
+  let result = await db.collection('user').findOne({ username : id });
+
+  if (!result) {
+    return cb(null, false, { message : '아이디 DB에 없음' })
+  }
+
+  if (result.password === pa) {
+    return cb(null, result)
+  } else {
+    return cb(null, false, { message : '비번불일치' })
+  }
+}));
+
+passport.serializeUser((user, done) => { //req.logIn() 쓰면 자동 실행됨.
+  process.nextTick(()=>{ // 내부 코드를 비동기적으로 처리해줌
+    done(null, { id : user._id, username : user.username }) // 쿠키도 보내줌
+  })
+});
+passport.deserializeUser(async (user, done) => {  // 유저가 보낸 쿠키 분석
+  let result = await db.collection('user').findOne({_id : new ObjectId(user.id)});
+  delete result.password
+
+  process.nextTick(()=>{ 
+    done(null, result)
+  })
+});
+
+
 app.get('/login', (req, res) => {
+  //console.log(req.user)
   res.render('login.ejs');
 });
+
+app.post('/login', async (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) return res.status(500).json(err)
+    if (!user) return res.status(401).json(info.message)
+
+    req.logIn(user, (err)=>{
+      if (err) return next(err)
+      res.redirect('/');
+    })
+  })(req, res, next) 
+})
