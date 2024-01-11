@@ -4,6 +4,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const methodeOverride = require('method-override');
 const bcrypt = require('bcrypt');
 const MongoStore = require('connect-mongo');
+require('dotenv').config();
 
 // 폴더안에 파일들을 html에서 사용가능
 app.use(express.static(__dirname + '/public'));
@@ -25,18 +26,18 @@ app.use(session({
   saveUninitialized : false, // 로그인 안해도 세션 만들것인지
   cookie : { maxAge : 60 * 1000 * 60 }, // 6000(1분) 1시간
   store : MongoStore.create({
-    mongoUrl : 'mongodb+srv://parkyangji:rhdandnjs02@cluster0.2n908hd.mongodb.net/?retryWrites=true&w=majority',// DB접속 URL
+    mongoUrl : process.env.DB_URL,// DB접속 URL
     dbName : 'board' //DB이름
   })
 }));
 app.use(passport.session());
 
 let db;
-const url = 'mongodb+srv://parkyangji:rhdandnjs02@cluster0.2n908hd.mongodb.net/?retryWrites=true&w=majority';
+const url = process.env.DB_URL;
 new MongoClient(url).connect().then((client) => {
   console.log('DB연결성공');
   db = client.db('board');
-  app.listen(8080, () => {
+  app.listen(process.env.PORT, () => {
     console.log('8080에서 서버 실행중')
   });
 }).catch((err) => {
