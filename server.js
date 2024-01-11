@@ -44,6 +44,15 @@ new MongoClient(url).connect().then((client) => {
   console.log(err);
 })
 
+// 미들웨어
+function loginCheck(req, res, next){
+  // req.body, req.query ... 가능
+  // next() 다음으로 이동
+  if (!req.user) res.send('로그인하세요');
+  next();
+}
+// app.use(loginCheck) // 밑에 있는 모든 api는 미들웨어 적용됨 (일괄등록) // 첫번째 매개변수에 '/URL' 넣어 조건부 적용 가능
+
 app.get('/', (req, res) => {
   //res.send('반갑다');
   //res.sendFile(__dirname + '/index.html');
@@ -57,7 +66,8 @@ app.get('/list', async (req, res) => {
   res.render('list.ejs', { 글목록: result }) //응답은 1개만
 });
 
-app.get('/write', (req, res) => {
+          // 미들웨어 여러개 넣기 가능 [함수1, 함수2, 함수3]
+app.get('/write', loginCheck, (req, res) => {
   res.render('write.ejs');
 });
 
