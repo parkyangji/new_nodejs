@@ -32,7 +32,10 @@ app.use(session({
 }));
 app.use(passport.session());
 
-let db;
+// let connectDB = require('./database');
+
+let db; // db 변수까지 export시키면 처리가 늦어짐
+/* connectDB.then((client) => { */
 const url = process.env.DB_URL;
 new MongoClient(url).connect().then((client) => {
   console.log('DB연결성공');
@@ -44,6 +47,8 @@ new MongoClient(url).connect().then((client) => {
   console.log(err);
 })
 
+app.use('/', require('./routes/shop'))  // routes
+
 // 미들웨어
 function loginCheck(req, res, next){
   // req.body, req.query ... 가능
@@ -52,6 +57,7 @@ function loginCheck(req, res, next){
   next();
 }
 // app.use(loginCheck) // 밑에 있는 모든 api는 미들웨어 적용됨 (일괄등록) // 첫번째 매개변수에 '/URL' 넣어 조건부 적용 가능
+
 
 app.get('/', (req, res) => {
   //res.send('반갑다');
@@ -81,7 +87,9 @@ app.post('/add', async (req, res) => {
 
       await db.collection('post').insertOne({
         title: req.body.title,
-        content: req.body.content
+        content: req.body.content,
+        user : req.user._id,
+        username : req.user.username
       });
 
       res.redirect('/list'); // 유저를 다른 페이지로 이동시킴
@@ -127,7 +135,8 @@ app.put('/edit', async (req, res) => {
 app.delete('/delete', async (req, res)=>{
   //console.log(req.query)
 
-  await db.collection('post').deleteOne({_id : new ObjectId(req.query.id)});
+  await db.collection('post').deleteOne({_id : new ObjectId(req.query.id), user : new ObjectId(req.user._id)});
+  // 삭제 성공됬을 때만 ui도 삭제되게 추가하기
   res.send('삭제완료'); // ajax 요청 사용시 .redirect, .render 안쓰는게 좋음
 });
 
@@ -185,7 +194,7 @@ app.get('/register', (req, res)=>{
 });
 
 app.post('/register', async (req, res)=>{
-  let hashing = await bcrypt.hash(req.body.password, 10);
+  let hashing = await bcrypt.hash(req.body.password, 10); // 비번 암호화하기
 
   await db.collection('user').insertOne({
     username: req.body.username,
@@ -196,4 +205,39 @@ app.post('/register', async (req, res)=>{
   // password 짧으면?
 
   res.redirect('/');
+});
+
+app.get('/search', async (req, res)=>{
+  //console.log(req.query.val)
+  // 1. 정확한 것만 찾아옴
+  /*
+  let result = await db.collection('post').find({ title : req.query.val }).toArray();
+  res.render('search.ejs', { 검색결과 : result });
+  */
+
+  // 2. 일부만 검색해도 가능 but 느려터짐
+  /* 정규식
+  let result = await db.collection('post').find({ title : { $regex : req.query.val} }).toArray();
+  res.render('search.ejs', { 검색결과 : result });
+  */
+
+  // 3. 인덱스이용 but 정확한 단어만 찾아옴, 띄어쓰기로 단어를 구분하기 때문
+  /*
+  let result = await db.collection('post').find({ $text : { $search : req.query.val} }).toArray();
+  console.log(result)
+  res.render('search.ejs', { 검색결과 : result });
+  */
+
+  // 4. search index, 문자에서 조사,불용어 제거, 모든 단어 정렬함
+  let 검색조건 = [
+    {$search : {
+      index : 'titleIndex',
+      text : { query : req.query.val, path : 'title' }
+    }},
+    // {} 조건 여러개 가능 $skip(건너뛰기), $limet(제한)
+    {$sort : { _id : 1 }}, // _id 순으로 오름차순
+    {$limit : 10}
+  ]
+  let result = await db.collection('post').aggregate(검색조건).toArray()
+  res.render('search.ejs', { 검색결과 : result })
 });

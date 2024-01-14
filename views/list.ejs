@@ -11,10 +11,15 @@
 
   <%- include('nav.ejs') %>
 
+  <input type="text" name="" id="" class="search">
+  <button class="search-send">검색</button>
+
+
   <span><%= new Date() %></span>
   <div class="white-bg">
     <% for (let i = 0; i < 글목록.length; i++){ %>
     <div class="list-box">
+      <p>작성자 : <%= 글목록[i].username %></p>
       <a href="/detail/<%= 글목록[i]._id %>"><%= 글목록[i].title %>
         <a href="/edit/<%= 글목록[i]._id %>">✏️</a>      
         <span data-id="<%= 글목록[i]._id %>" class="delete">🗑️</span>
@@ -24,7 +29,12 @@
     <% } %>
   </div> 
   
-
+<script>
+  document.querySelector('.search-send').addEventListener('click', function(){
+    let 입력한거 = document.querySelector('.search').value
+    location.href = '/search?val=' + 입력한거
+  })
+</script>
 <script>
   document.querySelectorAll('.delete').forEach((item, i)=>{
     item.addEventListener('click', function(e){
