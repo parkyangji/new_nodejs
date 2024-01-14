@@ -2,8 +2,9 @@ const express = require('express');
 const app = express();
 const { MongoClient, ObjectId } = require('mongodb');
 const methodeOverride = require('method-override');
-const bcrypt = require('bcrypt');
 const MongoStore = require('connect-mongo');
+const session = require('express-session');
+const passport = require('passport');
 require('dotenv').config();
 
 // 폴더안에 파일들을 html에서 사용가능
@@ -15,9 +16,6 @@ app.use(express.urlencoded({ extended: true }));
 // 폼 태그에서 put, delete 요청 등 맘대로
 app.use(methodeOverride('_method'));
 
-const session = require('express-session');
-const passport = require('passport');
-const LocalStratege = require('passport-local');
 
 app.use(passport.initialize());
 app.use(session({
@@ -32,14 +30,23 @@ app.use(session({
 }));
 app.use(passport.session());
 
-// let connectDB = require('./database');
 
+const initializePassport = require('./config/passport');
+let connectDB = require('./database');
+
+// routes
+app.use('/', require('./routes/write')); 
+app.use('/', require('./routes/auth')); 
+app.use('/', require('./routes/list')); 
+app.use('/', require('./routes/search')); 
+
+
+// db 연결
 let db; // db 변수까지 export시키면 처리가 늦어짐
-/* connectDB.then((client) => { */
-const url = process.env.DB_URL;
-new MongoClient(url).connect().then((client) => {
+connectDB.then((client) => {
   console.log('DB연결성공');
   db = client.db('board');
+  initializePassport(db);
   app.listen(process.env.PORT, () => {
     console.log('8080에서 서버 실행중')
   });
@@ -47,197 +54,9 @@ new MongoClient(url).connect().then((client) => {
   console.log(err);
 })
 
-app.use('/', require('./routes/shop'))  // routes
-
-// 미들웨어
-function loginCheck(req, res, next){
-  // req.body, req.query ... 가능
-  // next() 다음으로 이동
-  if (!req.user) res.send('로그인하세요');
-  next();
-}
-// app.use(loginCheck) // 밑에 있는 모든 api는 미들웨어 적용됨 (일괄등록) // 첫번째 매개변수에 '/URL' 넣어 조건부 적용 가능
-
-
+// 초기 화면
 app.get('/', (req, res) => {
   //res.send('반갑다');
   //res.sendFile(__dirname + '/index.html');
   res.render('index.ejs');
-});
-
-app.get('/list', async (req, res) => {
-  //db.collection('post').insertOne({title: '어쩌구'})
-  let result = await db.collection('post').find().toArray(); // db 내용을 가져오기
-  //console.log(result) 
-  res.render('list.ejs', { 글목록: result }) //응답은 1개만
-});
-
-          // 미들웨어 여러개 넣기 가능 [함수1, 함수2, 함수3]
-app.get('/write', loginCheck, (req, res) => {
-  res.render('write.ejs');
-});
-
-app.post('/add', async (req, res) => {
-  //console.log(req.body) //form에서 전송한 것
-
-  try {
-    if (req.body.title === '') {
-      res.send('제목입력안했는데?')
-    } else {
-
-      await db.collection('post').insertOne({
-        title: req.body.title,
-        content: req.body.content,
-        user : req.user._id,
-        username : req.user.username
-      });
-
-      res.redirect('/list'); // 유저를 다른 페이지로 이동시킴
-    }
-  } catch (e) {
-    //console.log(e)
-    res.status(500).send('서버에러남') // 에러시 에러코드 전송해주면 좋음
-  }
-});
-
-app.get('/detail/:id', async (req, res) => {
-
-  try {
-    let result = await db.collection('post').findOne({_id: new ObjectId(req.params.id)});
-    if (result === null) res.status(400).send('null');
-    res.render('detail.ejs', { 정보: result });
-  } catch (e) {
-    //console.log(e)
-    res.status(400).send('이상한 url 입력함');
-  }
-});
-
-app.get('/edit/:id', async (req, res) => {
-  let result = await db.collection('post').findOne({_id: new ObjectId(req.params.id)});
-  res.render('edit.ejs', { 정보: result });
-});
-
-app.put('/edit', async (req, res) => {
-
-  await db.collection('post').updateOne({ // updateMany도 있음
-    _id: new ObjectId(req.body.id) // 필터링 코드 $gt, $gte, $ne ...도 있음
-  }, {
-    $set: { // $inc (기존값에 +/-) $mul (기존값에 x) $unset (필드값 삭제)
-      title: req.body.title,
-      content: req.body.content
-    }
-  })
-
-  let result = await db.collection('post').find().toArray(); // db 내용을 가져오기
-  res.render('list.ejs', { 글목록: result });
-});
-
-app.delete('/delete', async (req, res)=>{
-  //console.log(req.query)
-
-  await db.collection('post').deleteOne({_id : new ObjectId(req.query.id), user : new ObjectId(req.user._id)});
-  // 삭제 성공됬을 때만 ui도 삭제되게 추가하기
-  res.send('삭제완료'); // ajax 요청 사용시 .redirect, .render 안쓰는게 좋음
-});
-
-
-
-passport.use(new LocalStratege(async (id, pa, cb) => {
-  let result = await db.collection('user').findOne({ username : id });
-
-  if (!result) {
-    return cb(null, false, { message : '아이디 DB에 없음' })
-  }
-
-  if (await bcrypt.compare(pa, result.password)) { //result.password === pa
-    return cb(null, result)
-  } else {
-    return cb(null, false, { message : '비번불일치' })
-  }
-}));
-
-passport.serializeUser((user, done) => { //req.logIn() 쓰면 자동 실행됨.
-  process.nextTick(()=>{ // 내부 코드를 비동기적으로 처리해줌
-    done(null, { id : user._id, username : user.username }) // 쿠키도 보내줌
-  })
-});
-// 특정 api에서만 deserializeUser 방법 찾기 // 요청이 많아 db 부담 => redis // or JWT
-passport.deserializeUser(async (user, done) => {  // 유저가 보낸 쿠키 분석
-  let result = await db.collection('user').findOne({_id : new ObjectId(user.id)});
-  delete result.password
-
-  process.nextTick(()=>{ 
-    done(null, result)
-  })
-});
-
-
-app.get('/login', (req, res) => {
-  //console.log(req.user)
-  res.render('login.ejs');
-});
-
-app.post('/login', async (req, res, next) => {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) return res.status(500).json(err)
-    if (!user) return res.status(401).json(info.message)
-
-    req.logIn(user, (err)=>{
-      if (err) return next(err)
-      res.redirect('/');
-    })
-  })(req, res, next) 
-});
-
-app.get('/register', (req, res)=>{
-  res.render('register.ejs')
-});
-
-app.post('/register', async (req, res)=>{
-  let hashing = await bcrypt.hash(req.body.password, 10); // 비번 암호화하기
-
-  await db.collection('user').insertOne({
-    username: req.body.username,
-    password: hashing // 해싱
-  });
-  // username 빈칸?
-  // 이미 있는 유저?
-  // password 짧으면?
-
-  res.redirect('/');
-});
-
-app.get('/search', async (req, res)=>{
-  //console.log(req.query.val)
-  // 1. 정확한 것만 찾아옴
-  /*
-  let result = await db.collection('post').find({ title : req.query.val }).toArray();
-  res.render('search.ejs', { 검색결과 : result });
-  */
-
-  // 2. 일부만 검색해도 가능 but 느려터짐
-  /* 정규식
-  let result = await db.collection('post').find({ title : { $regex : req.query.val} }).toArray();
-  res.render('search.ejs', { 검색결과 : result });
-  */
-
-  // 3. 인덱스이용 but 정확한 단어만 찾아옴, 띄어쓰기로 단어를 구분하기 때문
-  /*
-  let result = await db.collection('post').find({ $text : { $search : req.query.val} }).toArray();
-  console.log(result)
-  res.render('search.ejs', { 검색결과 : result });
-  */
-
-  // 4. search index, 문자에서 조사,불용어 제거, 모든 단어 정렬함
-  let 검색조건 = [
-    {$search : {
-      index : 'titleIndex',
-      text : { query : req.query.val, path : 'title' }
-    }},
-    // {} 조건 여러개 가능 $skip(건너뛰기), $limet(제한)
-    {$sort : { _id : 1 }}, // _id 순으로 오름차순
-    {$limit : 10}
-  ]
-  let result = await db.collection('post').aggregate(검색조건).toArray()
-  res.render('search.ejs', { 검색결과 : result })
 });
