@@ -10,6 +10,7 @@ const loginCheck = (req, res, next) => {
     res.locals.username = null;
     //res.send('로그인하세요');
   }
+  res.locals.currentRoute = req.url;
   next();
 }
 
