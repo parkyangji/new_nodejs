@@ -31,6 +31,17 @@ router.post('/login', async (req, res, next) => {
   })(req, res, next) 
 });
 
+router.get('/logout', (req, res) => {
+  //console.log(req.user)
+  req.logout((err) => { // passport 0.6.0부터 콜백함수 필요
+    if (err) return next(err);
+    req.session.destroy((err)=>{
+      if (err) return next(err);
+      res.redirect('/');
+    })
+  });
+});
+
 // 회원가입
 router.get('/register', (req, res)=>{
   res.render('register.ejs')
