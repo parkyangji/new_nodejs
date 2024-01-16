@@ -33,7 +33,13 @@ router.get('/detail/:id', async (req, res) => {
 
 router.get('/edit/:id', async (req, res) => {
   let result = await db.collection('post').findOne({_id: new ObjectId(req.params.id)});
-  res.render('edit.ejs', { 정보: result });
+  //console.log(result.user, req.user._id)
+  if (!req.user) return res.status(400).send('로그인 하세요');
+  if (result.user.equals(req.user._id)) {
+    res.render('edit.ejs', { 정보: result });
+  } else {
+    res.status(400).send('작성자가 아닙니다');
+  }
 });
 
 router.put('/edit', async (req, res) => {
@@ -51,13 +57,21 @@ router.put('/edit', async (req, res) => {
   res.render('list.ejs', { 글목록: result });
 });
 
-router.delete('/delete', async (req, res)=>{
-  //console.log(req.query)
+router.delete('/delete', async (req, res) => {
+  if (!req.user) return res.status(400).send('로그인 하세요');
+  try {
+      let result = await db.collection('post').findOne({_id: new ObjectId(req.query.id)});
 
-  await db.collection('post').deleteOne({_id : new ObjectId(req.query.id), user : new ObjectId(req.user._id)});
-  // 삭제 성공됬을 때만 ui도 삭제되게 추가하기
-  res.send('삭제완료'); // ajax 요청 사용시 .redirect, .render 안쓰는게 좋음
+      if (result.user.equals(req.user._id)) {
+          await db.collection('post').deleteOne({_id : new ObjectId(req.query.id), user : new ObjectId(req.user._id)});
+          res.send('삭제완료');
+      } else {
+          res.status(400).send('작성자가 아닙니다');
+      }
+  } catch (error) {
+      console.error(error);
+      res.status(500).send('서버 에러 발생');
+  }
 });
-
 
 module.exports = router;

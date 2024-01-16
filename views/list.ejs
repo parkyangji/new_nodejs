@@ -21,8 +21,8 @@
     <div class="list-box">
       <p>작성자 : <%= 글목록[i].username %></p>
       <a href="/detail/<%= 글목록[i]._id %>"><%= 글목록[i].title %>
-        <a href="/edit/<%= 글목록[i]._id %>">✏️</a>      
-        <span data-id="<%= 글목록[i]._id %>" class="delete">🗑️</span>
+        <a href="/edit/<%= 글목록[i]._id %>" class="button">수정</a>      
+        <span data-id="<%= 글목록[i]._id %>" class="delete button">삭제</span>
       </a>
       <p><%= 글목록[i].content %></p>
     </div>
@@ -48,12 +48,21 @@
         method : 'DELETE'
       })
       .then((r)=>r.text())
-      .then((r)=>{console.log(r) // 삭제완료
+      .then((responseText) => {
           // html을 보여주는 법 
           // 1. 서버에서 다 만들어서 보내기(서버사이드랜더링) 
           // 2. 서버는 데이터만 보내고 브라우저에서 완성하기 (클라이언트사이드렌더링)
-          item.parentElement.style.display = 'none';
-      }) 
+            if (responseText === '삭제완료') {
+                item.parentElement.style.display = 'none';
+            } else {
+                // 서버에서 전송한 사용자 친화적인 에러 메시지 표시
+                alert(responseText);
+            }
+      })
+      .catch((err) => {
+          console.error('클라이언트 에러:', err);
+          alert('클라이언트 에러 발생');
+      });
     })
   })
 
