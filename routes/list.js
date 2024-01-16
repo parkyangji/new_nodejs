@@ -32,6 +32,7 @@ router.get('/detail/:id', async (req, res) => {
 });
 
 router.get('/edit/:id', async (req, res) => {
+  /*
   let result = await db.collection('post').findOne({_id: new ObjectId(req.params.id)});
   //console.log(result.user, req.user._id)
   if (!req.user) return res.status(400).send('로그인 하세요');
@@ -40,6 +41,9 @@ router.get('/edit/:id', async (req, res) => {
   } else {
     res.status(400).send('작성자가 아닙니다');
   }
+  */ 
+  let result = await db.collection('post').findOne({_id: new ObjectId(req.params.id)});
+  res.render('edit.ejs', { 정보: result });
 });
 
 router.put('/edit', async (req, res) => {
