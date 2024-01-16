@@ -10,7 +10,7 @@
 <body>
   <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/">Navbar</a>
+      <a class="navbar-brand" href="/">CRUD</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -22,18 +22,23 @@
           <li class="nav-item">
             <a class="nav-link" href="/list">List</a>
           </li>
+          <% if (isAuthenticated) { %>
           <li class="nav-item">
             <a class="nav-link" href="/write">Write</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" href="/logout">Logout</a>
+          </li>
+          <% } else { %>
+          <li class="nav-item">
             <a class="nav-link" href="/login">Login</a>
           </li>
+          <% } %>
         </ul>
-        <form class="d-flex" role="search">
-          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-          <button class="btn btn-outline-success" type="submit">Search</button>
-        </form>
       </div>
+      <% if (username !== null) { %>
+      <div><%= username %></div>
+      <% } %>
     </div>
   </nav>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

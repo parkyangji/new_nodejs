@@ -1,6 +1,9 @@
 body {
   margin: 0;
 }
+a {
+  text-decoration: none !important;
+}
 .nav {
   display: flex;
   padding: 15px;
@@ -80,3 +83,9 @@ div, input {
   border-radius: 5px;
   vertical-align: middle;
 } 
+
+.button {
+  cursor: pointer;
+  color: black;
+  border: 1px solid;
+}

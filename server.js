@@ -33,6 +33,10 @@ app.use(passport.session());
 
 const initializePassport = require('./config/passport');
 let connectDB = require('./database');
+const loginCheck = require('./config/middleware');
+
+// 미들웨어 연결
+app.use(loginCheck); // 로그인 상태에 따른 정보를 네비바에 전달하기 위함
 
 // routes
 app.use('/', require('./routes/write')); 
@@ -54,9 +58,11 @@ connectDB.then((client) => {
   console.log(err);
 })
 
+
 // 초기 화면
 app.get('/', (req, res) => {
   //res.send('반갑다');
   //res.sendFile(__dirname + '/index.html');
+  //res.locals.isAuthenticated = false;
   res.render('index.ejs');
 });
