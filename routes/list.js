@@ -14,9 +14,14 @@ connectDB.then((client) => {
 
 router.get('/list', async (req, res) => {
   //db.collection('post').insertOne({title: '어쩌구'})
-  let result = await db.collection('post').find().toArray(); // db 내용을 가져오기
-  //console.log(result) 
-  res.render('list.ejs', { 글목록: result }) //응답은 1개만
+  const page = req.query.p || 0;
+  const booksPerPage = 5;
+  const count = await db.collection('post').find().toArray();
+
+  let result = await db.collection('post').find().skip(page * booksPerPage).limit(booksPerPage).toArray();
+  //let result = await db.collection('post').find().toArray(); // db 내용을 가져오기
+
+  res.render('list.ejs', { 글목록: result , 글총개수 : count.length, 글제한 : booksPerPage}) //응답은 1개만
 });
 
 router.get('/detail/:id', async (req, res) => {

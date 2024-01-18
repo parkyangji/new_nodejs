@@ -29,7 +29,10 @@
     </div>
     <% } %>
   </div> 
-  
+  <% for (let i = 0; i < 글총개수/글제한; i++){ %>
+    <button class="page"><%= (i + 1) %></button>
+  <% } %>
+
 <script>
   document.querySelector('.search-send').addEventListener('click', function(){
     let 입력한거 = document.querySelector('.search').value
@@ -100,6 +103,14 @@
       console.log(err)
     })
   */
+</script>
+<script>
+  document.querySelectorAll('.page').forEach((item, i)=>{
+    item.addEventListener('click', function(e){
+      e.preventDefault();
+      location.href = '/list?p=' + (item.innerHTML-1).toString();
+    })
+  })
 </script>
 </body>
 </html>
