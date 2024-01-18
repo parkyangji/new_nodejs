@@ -11,11 +11,12 @@
 
   <%- include('nav.ejs') %>
 
-  <input type="text" name="" id="" class="search">
-  <button class="search-send">검색</button>
+  <div style="margin: 20px;">
+    <p><%= new Date().toLocaleString() %></p>
+    <input type="text" name="" id="" class="search">
+    <button class="search-send">검색</button>
+  </div>
 
-
-  <span><%= new Date() %></span>
   <div class="white-bg">
     <% for (let i = 0; i < 글목록.length; i++){ %>
     <div class="list-box">
